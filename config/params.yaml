@@ -1,0 +1,16 @@
+teleop_ack_rc:
+  rc_joy_node:
+    ros__parameters:
+      port: "/dev/rc_bridge"
+      
+      # Steering Calibration
+      steer_min: 1038
+      steer_max: 1990
+      steer_dead_low: 1493
+      steer_dead_high: 1504
+      
+      # Throttle Calibration
+      throttle_min: 1013
+      throttle_max: 1940
+      throttle_dead_low: 1492
+      throttle_dead_high: 1504
