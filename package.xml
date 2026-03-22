@@ -16,8 +16,7 @@
   <depend>std_msgs</depend>
 
   <build_depend>pkg-config</build_depend>
-  <build_depend>libserial</build_depend>
-  <exec_depend>libserial</exec_depend>
+  <depend>libserial-dev</depend> 
 
   <export>
     <build_type>ament_cmake</build_type>
