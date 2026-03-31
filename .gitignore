@@ -1,1 +1,7 @@
 .vscode/
+log
+build
+install
+.vscode
+.cache
+compile_commands.json
