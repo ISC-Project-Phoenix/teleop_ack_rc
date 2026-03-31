@@ -1,42 +1,41 @@
 #include "teleop_ack_rc/rc_joy_node.hpp"
-#include <vector>
-#include <cstring>
+
 #include <algorithm>
+#include <cstring>
+#include <vector>
 
 namespace teleop_ack_rc {
 
 /* RcJoyNode: Constructor for our Joynode */
-RcJoyNode::RcJoyNode(const rclcpp::NodeOptions & options)
-    : Node("rc_joy_node", options) {
-    
-    this->declare_parameter("port", "/dev/rc_bridge");     /* make parameter to listen to port /dev/rc_bridge as STM will always connect there */
-    port_name_ = this->get_parameter("port").as_string();  
-    
+RcJoyNode::RcJoyNode(const rclcpp::NodeOptions& options) : Node("rc_joy_node", options) {
+    this->declare_parameter(
+        "port",
+        "/dev/rc_bridge"); /* make parameter to listen to port /dev/rc_bridge as STM will always connect there */
+    port_name_ = this->get_parameter("port").as_string();
+
     /* Gaurdbands for our steering input */
     this->declare_parameter("steer_min", 1038);
     this->declare_parameter("steer_max", 1990);
     this->declare_parameter("steer_dead_low", 1493);
     this->declare_parameter("steer_dead_high", 1504);
-    
+
     /* Gaurdbands for our steering input */
     this->declare_parameter("throttle_min", 1013);
     this->declare_parameter("throttle_max", 1940);
     this->declare_parameter("throttle_dead_low", 1492);
     this->declare_parameter("throttle_dead_high", 1504);
 
-    joy_pub_ = this->create_publisher<sensor_msgs::msg::Joy>("/rc_joy", 10); 
+    joy_pub_ = this->create_publisher<sensor_msgs::msg::Joy>("/rc_joy", 10);
 
     try {
         serial_port_.Open(port_name_);
         serial_port_.SetBaudRate(LibSerial::BaudRate::BAUD_115200);
         RCLCPP_INFO(this->get_logger(), "Opened port: %s", port_name_.c_str());
-    } catch (const std::exception & e) {
+    } catch (const std::exception& e) {
         RCLCPP_ERROR(this->get_logger(), "Serial Error: %s", e.what());
     }
 
-    timer_ = this->create_wall_timer(
-        std::chrono::milliseconds(20),
-        std::bind(&RcJoyNode::timer_callback, this));
+    timer_ = this->create_wall_timer(std::chrono::milliseconds(20), std::bind(&RcJoyNode::timer_callback, this));
 }
 
 /* RcJoyNode: Destructor closes node on completion. */
@@ -54,8 +53,7 @@ float RcJoyNode::apply_guardbands(uint16_t raw, int min_v, int max_v, int dead_l
         float range = static_cast<float>(max_v) - dead_high;
         float out = (val - dead_high) / range;
         return std::min(1.0f, out);
-    } 
-    else {
+    } else {
         float range = static_cast<float>(dead_low) - min_v;
         float out = (val - dead_low) / range;
         return std::max(-1.0f, out);
@@ -107,10 +105,9 @@ void RcJoyNode::timer_callback() {
                     joy_pub_->publish(joy_msg); /* send joy message */
                 }
             } catch (...) {
-
             }
         }
     }
 }
 
-} 
+}  // namespace teleop_ack_rc
