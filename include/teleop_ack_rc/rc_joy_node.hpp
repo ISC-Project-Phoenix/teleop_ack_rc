@@ -33,6 +33,10 @@ private:
     std::string port_name_;             /* Device path (will always be /dev/rc_bridge)*/
     rclcpp::Publisher<sensor_msgs::msg::Joy>::SharedPtr joy_pub_;
     rclcpp::TimerBase::SharedPtr timer_; /* Drives at 50 Hz polling loop. */
+
+    /* Fix 1: hold last valid packet so we publish every tick even if serial misses a frame */
+    sensor_msgs::msg::Joy last_joy_;
+    bool has_valid_packet_{false};
 };
 
 } /* namespace teleop_ack_rc*/
