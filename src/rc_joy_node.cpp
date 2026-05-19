@@ -81,14 +81,19 @@ void RcJoyNode::timer_callback() {
         serial_port_.ReadByte(header);
 
         /* Packet header 0xAA starts a new frame. */
+        if (serial_port_.IsDataAvailable()) {
+        uint8_t header = 0;
+        serial_port_.ReadByte(header);
+
         if (header == 0xAA) {
-            RC_PACKET p;
+            RC_PACKET p{}; // Zeros out memory instantly
             p.header = header;
             std::vector<uint8_t> buffer;
 
             try {
-                /* read the remaining 8 bytes of the packet. */
-                serial_port_.Read(buffer, 8, 20);
+                // LOWER the timeout to 2-5ms max so it never delays your 20ms loop!
+                serial_port_.Read(buffer, 8, 2); 
+                
                 if (buffer.size() == 8) {
                     std::memcpy(&p.steer, buffer.data(), 8);
 
@@ -96,18 +101,16 @@ void RcJoyNode::timer_callback() {
                     joy_msg.header.stamp = this->now();
                     joy_msg.header.frame_id = "rc_joy_frame";
 
-                    /* Transform raw PWM to normalized floats [-1.0, 1.0], and [-0.2733, 0.2733] */
                     joy_msg.axes.push_back(apply_guardbands(p.steer, s_min, s_max, s_dl, s_dh));
                     joy_msg.axes.push_back(apply_guardbands(p.throttle, t_min, t_max, t_dl, t_dh));
 
-                    /* If teleop switch flicked make all 10 buttons 1*/
                     int btn_val = (p.teleop > 1500) ? 1 : 0;
                     joy_msg.buttons.assign(10, btn_val);
 
-                    joy_pub_->publish(joy_msg); /* send joy message */
+                    joy_pub_->publish(joy_msg);
                 }
-            } catch (...) {
-
+            } catch (const std::exception & e) {
+                // Avoid logging heavy ROS_ERROR messages inside 50Hz loops as it increases lag
             }
         }
     }
