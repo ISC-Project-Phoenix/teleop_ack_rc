@@ -6,10 +6,13 @@
 int main(int argc, char * argv[]) {
     rclcpp::init(argc, argv);
     
-    auto node = std::make_shared<teleop_ack_rc::RcJoyNode>(rclcpp::NodeOptions());
+    rclcpp::executors::MultiThreadedExecutor exec;
+    rclcpp::NodeOptions options;
     
-    rclcpp::spin(node);
+    auto node = std::make_shared<teleop_ack_rc::RcJoyNode>(options);
+    exec.add_node(node);
+    
+    exec.spin();
     rclcpp::shutdown();
-    
     return 0;
 }
