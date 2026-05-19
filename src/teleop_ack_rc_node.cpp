@@ -21,13 +21,34 @@ TeleopAckRcNode::TeleopAckRcNode(const rclcpp::NodeOptions & options)
 
 /* joy_callback: convet our controller joy input into usefull ackerman values */
 void TeleopAckRcNode::joy_callback(const sensor_msgs::msg::Joy::SharedPtr msg) {
-    if (msg->axes.size() < 2) return;
+    if (msg->axes.size() < 2) 
+        return;
 
     auto ack_msg = ackermann_msgs::msg::AckermannDrive();
 
-    ack_msg.steering_angle = msg->axes[0] * -max_steering_angle_;
-    ack_msg.speed = msg->axes[1] * max_speed_; 
+    /* 1. Calculate the raw target angle based on stick input */
+    double target_angle = msg->axes[0] * -max_steering_angle_;
+    
+    /* 2. Define your maximum allowed change per frame (50Hz callback = every 20ms)
+    If 0.05 is too slow or too fast on the track, tune this parameter! */
+    double max_angle_step = 0.05; 
 
+    /* 3. Smooth out extreme spikes / rapid stick throws */
+    if ((target_angle - last_steering_angle_) > max_angle_step) {
+        ack_msg.steering_angle = last_steering_angle_ + max_angle_step;
+    } else if ((target_angle - last_steering_angle_) < -max_angle_step) {
+        ack_msg.steering_angle = last_steering_angle_ - max_angle_step;
+    } else {
+        ack_msg.steering_angle = target_angle;
+    }
+    
+    /* 4. Save the current state for the next cycle */
+    last_steering_angle_ = ack_msg.steering_angle;
+
+    /* 5. Calculate speed (unchanged) */
+    ack_msg.speed = msg->axes[1] * max_speed_;
+
+    /* Publish the filtered message */
     ack_pub_->publish(ack_msg);
 }
 

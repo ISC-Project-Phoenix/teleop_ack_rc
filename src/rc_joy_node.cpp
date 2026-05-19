@@ -75,23 +75,18 @@ void RcJoyNode::timer_callback() {
     int t_max = this->get_parameter("throttle_max").as_int();
     int t_dl = this->get_parameter("throttle_dead_low").as_int();
     int t_dh = this->get_parameter("throttle_dead_high").as_int();
-
-    while (serial_port_.IsDataAvailable()) {
-        uint8_t header;
-        serial_port_.ReadByte(header);
-
-        /* Packet header 0xAA starts a new frame. */
-        if (serial_port_.IsDataAvailable()) {
+    
+    if (serial_port_.IsDataAvailable()) {
         uint8_t header = 0;
         serial_port_.ReadByte(header);
 
         if (header == 0xAA) {
-            RC_PACKET p{}; // Zeros out memory instantly
+            RC_PACKET p{}; /* Safe initialization: Zeros out memory instantly */
             p.header = header;
             std::vector<uint8_t> buffer;
 
             try {
-                // LOWER the timeout to 2-5ms max so it never delays your 20ms loop!
+                /* Short timeout (2ms) ensures your 50Hz wheel/timer cycle never blocks */
                 serial_port_.Read(buffer, 8, 2); 
                 
                 if (buffer.size() == 8) {
@@ -110,7 +105,7 @@ void RcJoyNode::timer_callback() {
                     joy_pub_->publish(joy_msg);
                 }
             } catch (const std::exception & e) {
-                // Avoid logging heavy ROS_ERROR messages inside 50Hz loops as it increases lag
+                // Catches framing drops silently to keep the log channel unclogged
             }
         }
     }

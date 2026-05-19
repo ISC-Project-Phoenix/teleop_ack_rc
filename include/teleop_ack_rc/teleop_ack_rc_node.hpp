@@ -20,6 +20,8 @@ private:
 
     double max_speed_;           /* Maximum speed we will publish [-6.7056, 6.7056]*/
     double max_steering_angle_;  /* Maximum angle we will publish [-0.2733, 0.2733]*/
+
+    double last_steering_angle_ = 0.0; /* This should help smooth out erradic motion. */
 };
 
 } 
